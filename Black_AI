@@ -1,0 +1,2510 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Black — Neural Network</title>
+<style>
+  :root {
+    --card-w: 320px;
+    --accent: #ffffff;
+    --muted: rgba(255,255,255,0.18);
+    --glass: rgba(255,255,255,0.03);
+    --success: rgba(0, 230, 118, 0.2);
+    --error: rgba(255, 82, 82, 0.2);
+  }
+
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+  
+  html, body { 
+    height: 100%; 
+    overflow: hidden; 
+    touch-action: manipulation;
+  }
+  
+  body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #000000;
+    color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+
+  /* Оптимизированный космический фон ТОЛЬКО для аутентификации */
+  .auth-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -4;
+    background: 
+      radial-gradient(circle at 20% 30%, rgba(20, 40, 120, 0.25) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(120, 40, 180, 0.2) 0%, transparent 50%),
+      linear-gradient(135deg, #000000 0%, #0a0a1a 100%);
+    overflow: hidden;
+    display: none;
+  }
+
+  /* Редкие звезды вместо созвездий */
+  .auth-stars {
+    position: absolute;
+    inset: 0;
+    background-repeat: repeat;
+    background-size: 800px 800px;
+    pointer-events: none;
+    opacity: 0.8;
+    /* Редкие звезды - уменьшено количество */
+    background-image: 
+      radial-gradient(0.8px 0.8px at 10% 15%, #fff 70%, transparent 71%),
+      radial-gradient(1.0px 1.0px at 25% 60%, #fff 70%, transparent 71%),
+      radial-gradient(1.2px 1.2px at 40% 30%, #fff 70%, transparent 71%),
+      radial-gradient(0.7px 0.7px at 55% 75%, #fff 70%, transparent 71%),
+      radial-gradient(1.1px 1.1px at 70% 45%, #fff 70%, transparent 71%),
+      radial-gradient(0.9px 0.9px at 85% 20%, #fff 70%, transparent 71%),
+      radial-gradient(1.3px 1.3px at 90% 65%, #fff 70%, transparent 71%);
+    animation: authTwinkle 8s ease-in-out infinite;
+    z-index: -3;
+  }
+
+  .auth-stars::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(0.9px 0.9px at 15% 85%, #fff 60%, transparent 61%),
+      radial-gradient(1.1px 1.1px at 30% 40%, #fff 60%, transparent 61%),
+      radial-gradient(0.6px 0.6px at 65% 25%, #fff 60%, transparent 61%),
+      radial-gradient(1.0px 1.0px at 80% 55%, #fff 60%, transparent 61%);
+    animation: authTwinkle 12s ease-in-out infinite reverse;
+    opacity: 0.6;
+    z-index: -2;
+  }
+
+  @keyframes authTwinkle {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* Простой фон для основного приложения */
+  .main-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -4;
+    background: #000;
+    overflow: hidden;
+  }
+
+  /* Редкие звезды в основном приложении */
+  .main-stars {
+    position: absolute;
+    inset: 0;
+    background-repeat: repeat;
+    background-size: 700px 700px;
+    pointer-events: none;
+    opacity: 0.95;
+    /* Еще более редкие звезды */
+    background-image: 
+      radial-gradient(0.8px 0.8px at 8% 12%, #fff 60%, transparent 61%),
+      radial-gradient(1.0px 1.0px at 22% 68%, #fff 60%, transparent 61%),
+      radial-gradient(0.9px 0.9px at 38% 35%, #fff 60%, transparent 61%),
+      radial-gradient(1.2px 1.2px at 62% 82%, #fff 60%, transparent 61%),
+      radial-gradient(0.7px 0.7px at 78% 48%, #fff 60%, transparent 61%),
+      radial-gradient(1.1px 1.1px at 92% 28%, #fff 60%, transparent 61%);
+    animation: twinkle 6s linear infinite;
+    z-index: -3;
+  }
+
+  .main-stars::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(0.6px 0.6px at 12% 42%, #fff 60%, transparent 61%),
+      radial-gradient(1.0px 1.0px at 45% 18%, #fff 60%, transparent 61%),
+      radial-gradient(0.8px 0.8px at 58% 72%, #fff 60%, transparent 61%),
+      radial-gradient(1.1px 1.1px at 85% 38%, #fff 60%, transparent 61%);
+    animation: twinkle 9s linear infinite;
+    opacity: 0.6;
+    z-index: -2;
+  }
+
+  @keyframes twinkle {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
+
+  /* Оверлей и спиннер */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.45);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+
+  .spinner {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 6px solid rgba(255,255,255,0.08);
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+    box-shadow: 0 6px 20px rgba(255,255,255,0.06);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Аутентификация */
+  .auth-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 900;
+    padding: 16px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: var(--card-w);
+    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 20px;
+    backdrop-filter: blur(15px);
+    box-shadow: 
+      0 20px 50px rgba(0,0,0,0.8),
+      0 0 0 1px rgba(255,255,255,0.05),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+    transform: translateY(0);
+    animation: cardIn 0.5s cubic-bezier(0.2,0.9,0.2,1);
+  }
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  h2 {
+    margin: 0 0 16px 0;
+    font-weight: 600;
+    font-size: 18px;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+
+  /* Выбор языка перед входом - БЕЗ ФЛАГОВ */
+  .language-selector-auth {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .lang-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.9);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+  }
+
+  .lang-btn:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  .lang-btn.active {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  /* ИСПРАВЛЕНО: Уведомление об ошибке - ТОЛЬКО красный текст, без фона и рамки */
+  .error-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    padding: 14px 20px;
+    border-radius: 10px;
+    background: transparent; /* Убрали красный фон */
+    color: #ff0000; /* Красный текст */
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none; /* Убрали тень */
+    backdrop-filter: none; /* Убрали размытие */
+    border: none; /* Убрали границу */
+    max-width: 90%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .error-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .field { 
+    margin-bottom: 12px; 
+    position: relative;
+  }
+  
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: 13px 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: #ffffff;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 44px;
+  }
+  
+  input::placeholder { 
+    color: rgba(255,255,255,0.4); 
+    font-size: 15px;
+  }
+  
+  input:focus {
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.07);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.05);
+  }
+
+  /* Убираем стандартные выделения в инпутах */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: white;
+    -webkit-box-shadow: 0 0 0px 1000px rgba(255,255,255,0.04) inset;
+    transition: background-color 5000s ease-in-out 0s;
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 15px;
+  }
+
+  /* Улучшенная кнопка */
+  .btn {
+    display: inline-block;
+    width: 100%;
+    padding: 13px;
+    margin-top: 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    font-family: inherit;
+    min-height: 44px;
+  }
+
+  .btn:hover {
+    background: rgba(255,255,255,0.09);
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  .btn:active {
+    transform: scale(0.98);
+    background: rgba(255,255,255,0.12);
+    transition: transform 0.1s ease;
+  }
+
+  .footer {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+  }
+  
+  .footer a {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 6px;
+    position: relative;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .footer a:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  
+  .footer a:active {
+    transform: scale(0.95);
+  }
+
+  /* Основной интерфейс */
+  .app-container {
+    display: none;
+    height: 100vh;
+    flex-direction: column;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* Хедер - АБСОЛЮТНО ФИКСИРОВАН В САМОМ ВЕРХУ */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(20px);
+    min-height: 56px;
+    flex-shrink: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    width: 100%;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo {
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, #fff, rgba(255,255,255,0.8));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .user-badge {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+
+  .header-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  /* Бургер-меню */
+  .burger-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    z-index: 1001;
+    -webkit-tap-highlight-color: transparent;
+    padding: 8px;
+  }
+
+  .burger-menu:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.15);
+  }
+
+  .burger-menu:active { 
+    transform: scale(0.95); 
+    background: rgba(255,255,255,0.09);
+  }
+
+  .burger-line {
+    width: 16px;
+    height: 1.5px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 1px;
+    transition: all 0.3s ease;
+    margin: 1.5px 0;
+  }
+
+  .burger-menu.active .burger-line:nth-child(1) {
+    transform: rotate(45deg) translate(4px, 4px);
+  }
+
+  .burger-menu.active .burger-line:nth-child(2) {
+    opacity: 0;
+  }
+
+  .burger-menu.active .burger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(4px, -4px);
+  }
+
+  /* Панель бургер-меню */
+  .burger-panel {
+    position: fixed;
+    top: 0;
+    right: -280px;
+    width: 260px;
+    height: 100%;
+    background: rgba(0,0,0,0.98);
+    backdrop-filter: blur(25px);
+    border-left: 1px solid rgba(255,255,255,0.1);
+    padding: 16px;
+    transition: right 0.3s cubic-bezier(0.2,0.9,0.2,1);
+    overflow-y: auto;
+    z-index: 1002;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.8);
+  }
+
+  .burger-panel.open { 
+    right: 0; 
+  }
+
+  /* Оверлей для закрытия меню */
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 1001;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .menu-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Профиль в меню */
+  .menu-profile {
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 20px;
+    margin-top: 0;
+  }
+
+  .profile-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 4px;
+  }
+
+  .profile-email {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* Разделы бургер-меню */
+  .menu-section {
+    margin-bottom: 20px;
+  }
+
+  .menu-section-title {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding-left: 4px;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+    min-height: 40px;
+    width: 100%;
+  }
+
+  .menu-item:hover {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  .menu-item:active {
+    background: rgba(255,255,255,0.08);
+    transform: scale(0.98);
+  }
+
+  .menu-icon {
+    width: 18px;
+    height: 18px;
+    stroke: rgba(255,255,255,0.8);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .menu-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Кастомный выпадающий список для языка - БЕЗ ФЛАГОВ */
+  .custom-select {
+    position: relative;
+    width: 120px;
+    margin-left: 8px;
+  }
+
+  .select-header {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.9);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+    min-height: 32px;
+  }
+
+  .select-header:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.25);
+  }
+
+  .select-arrow {
+    width: 12px;
+    height: 12px;
+    stroke: rgba(255,255,255,0.6);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    transition: transform 0.2s ease;
+  }
+
+  .select-arrow.open {
+    transform: rotate(180deg);
+  }
+
+  .select-options {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 4px;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-5px);
+    pointer-events: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.6);
+  }
+
+  .select-options.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .select-option {
+    padding: 8px 10px;
+    border-radius: 4px;
+    color: rgba(255,255,255,0.8);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .select-option:hover {
+    background: rgba(255,255,255,0.1);
+  }
+
+  .select-option.active {
+    background: rgba(255,255,255,0.15);
+    color: white;
+  }
+
+  /* Список чатов */
+  .chats-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .chat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.2s ease;
+  }
+
+  .chat-item:last-child {
+    border-bottom: none;
+  }
+
+  .chat-item:hover {
+    background: rgba(255,255,255,0.05);
+  }
+
+  .chat-item.active {
+    background: rgba(255,255,255,0.1);
+    border-left: 3px solid rgba(255,255,255,0.3);
+  }
+
+  .chat-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .chat-name {
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+    font-weight: 500;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chat-preview {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chat-date {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .chat-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: 8px;
+  }
+
+  .chat-delete-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 82, 82, 0.3);
+    background: rgba(255, 82, 82, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .chat-delete-btn:hover {
+    background: rgba(255, 82, 82, 0.2);
+    border-color: rgba(255, 82, 82, 0.5);
+  }
+
+  .chat-delete-icon {
+    width: 12px;
+    height: 12px;
+    stroke: rgba(255, 82, 82, 0.9);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
+
+  /* Чат - СООБЩЕНИЯ ПОВЕРХ ВСЕХ ОКОН */
+  .chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    height: calc(100vh - 56px);
+    margin-top: 56px;
+  }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    -webkit-overflow-scrolling: touch;
+    will-change: transform;
+    /* Оптимизация для плавной прокрутки */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    /* Гарантируем, что контент можно прокрутить */
+    min-height: 0;
+    max-height: calc(100vh - 150px);
+  }
+
+  /* Стиль для скроллбара в чате */
+  .messages::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .messages::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .messages::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+  }
+  
+  .messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.2);
+  }
+
+  .message {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    animation: messageIn 0.3s ease;
+    line-height: 1.4;
+    font-size: 14.5px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex-shrink: 0;
+    /* Гарантируем, что длинные сообщения переносятся */
+    white-space: pre-wrap;
+    word-break: break-word;
+    /* Сообщения поверх всех окон */
+    position: relative;
+    z-index: 10;
+  }
+
+  @keyframes messageIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .message.ai {
+    align-self: flex-start;
+    background: linear-gradient(135deg, rgba(0,10,20,0.3), rgba(0,5,10,0.2));
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+
+  /* Ввод сообщения */
+  .input-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(20px);
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  textarea {
+    flex: 1;
+    min-height: 44px;
+    max-height: 120px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03);
+    color: white;
+    font-family: inherit;
+    font-size: 14.5px;
+    resize: none;
+    outline: none;
+    transition: all 0.18s ease;
+    -webkit-appearance: none;
+    line-height: 1.4;
+  }
+  textarea:focus {
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.05);
+  }
+
+  .send-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+  
+  .send-btn:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.25);
+  }
+  
+  .send-btn:active { 
+    transform: scale(0.95); 
+    background: rgba(255,255,255,0.15);
+  }
+
+  /* Правильная иконка отправки */
+  .send-icon {
+    width: 20px;
+    height: 20px;
+    stroke: rgba(255,255,255,0.9);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
+
+  /* Иконка + для нового чата */
+  .new-chat-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.02);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+  }
+  
+  .new-chat-btn:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.15);
+  }
+  
+  .new-chat-btn:active { 
+    transform: scale(0.95); 
+    background: rgba(255,255,255,0.09);
+  }
+
+  .new-chat-icon {
+    width: 18px;
+    height: 18px;
+    stroke: rgba(255,255,255,0.9);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
+
+  /* Уведомления в чате - ПОВЕРХ ВСЕХ ОКОН */
+  .notification {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 12px 20px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+    font-size: 14px;
+    color: white;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 2000; /* ВЫШЕ чем все остальные элементы */
+    max-width: calc(100% - 32px);
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .notification.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Кнопка выхода в меню */
+  .menu-logout {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 82, 82, 0.3);
+    background: rgba(255, 82, 82, 0.1);
+    color: rgba(255, 82, 82, 0.9);
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.15s ease;
+    font-size: 13px;
+    text-align: center;
+    min-height: 40px;
+  }
+  
+  .menu-logout:hover {
+    background: rgba(255, 82, 82, 0.15);
+    border-color: rgba(255, 82, 82, 0.5);
+  }
+  
+  .menu-logout:active {
+    transform: scale(0.98);
+    background: rgba(255, 82, 82, 0.2);
+  }
+
+  /* Адаптивность для мобильных */
+  @media (max-width: 480px) {
+    .burger-panel {
+      width: 240px;
+      right: -240px;
+    }
+    
+    .header {
+      padding: 10px 12px;
+      min-height: 52px;
+    }
+    
+    .user-badge {
+      max-width: 100px;
+      font-size: 12px;
+    }
+    
+    .message {
+      max-width: 90%;
+      font-size: 14px;
+      padding: 10px 14px;
+    }
+    
+    .notification {
+      bottom: 90px;
+      padding: 10px 16px;
+      font-size: 13px;
+      z-index: 2000;
+    }
+    
+    .error-toast {
+      top: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      max-width: 95%;
+      z-index: 2000;
+    }
+    
+    .chat-container {
+      height: calc(100vh - 52px);
+      margin-top: 52px;
+    }
+    
+    .messages {
+      padding: 12px;
+      padding-bottom: 12px;
+      max-height: calc(100vh - 140px);
+    }
+    
+    .input-area {
+      padding: 12px;
+    }
+    
+    .menu-section {
+      margin-bottom: 16px;
+    }
+    
+    .menu-item {
+      padding: 8px;
+      min-height: 36px;
+    }
+    
+    .menu-text {
+      font-size: 12px;
+    }
+    
+    .chats-list {
+      max-height: 180px;
+    }
+    
+    .custom-select {
+      width: 100px;
+    }
+    
+    .lang-btn {
+      padding: 8px 12px;
+      min-width: 70px;
+      font-size: 12px;
+    }
+  }
+
+  @media (max-height: 600px) {
+    .auth-container {
+      align-items: flex-start;
+      padding-top: 20px;
+    }
+    
+    .card {
+      margin-top: 10px;
+      padding: 16px;
+    }
+    
+    .messages {
+      padding: 10px 12px;
+      padding-bottom: 10px;
+      max-height: calc(100vh - 130px);
+    }
+    
+    .notification {
+      bottom: 80px;
+    }
+    
+    .input-area {
+      padding: 10px 12px;
+    }
+    
+    .chats-list {
+      max-height: 150px;
+    }
+  }
+</style>
+</head>
+<body>
+  <!-- ВСПЛЫВАЮЩЕЕ УВЕДОМЛЕНИЕ ОБ ОШИБКЕ -->
+  <div class="error-toast" id="errorToast"></div>
+
+  <!-- Фон для аутентификации -->
+  <div class="auth-bg" id="authBg">
+    <div class="auth-stars"></div>
+  </div>
+
+  <!-- Фон для основного приложения -->
+  <div class="main-bg" id="mainBg">
+    <div class="main-stars"></div>
+  </div>
+
+  <!-- Оверлей загрузки -->
+  <div class="overlay" id="overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Аутентификация -->
+  <div class="auth-container" id="authContainer">
+    <div class="card">
+      <h2 id="title">Регистрация</h2>
+      
+      <!-- Выбор языка перед входом - БЕЗ ФЛАГОВ -->
+      <div class="language-selector-auth" id="languageSelectorAuth">
+        <button class="lang-btn active" data-lang="ru">
+          Русский
+        </button>
+        <button class="lang-btn" data-lang="en">
+          English
+        </button>
+      </div>
+      
+      <form id="authForm" autocomplete="on" novalidate>
+        <div class="field" id="usernameBlock">
+          <input id="username" name="username" type="text" placeholder="Имя пользователя" autocomplete="username">
+        </div>
+        <div class="field">
+          <input id="email" name="email" type="email" placeholder="Email" autocomplete="email">
+        </div>
+        <div class="field">
+          <input id="password" name="password" type="password" placeholder="Пароль" autocomplete="new-password">
+        </div>
+        <div class="field" id="confirmBlock">
+          <input id="confirm" name="confirm" type="password" placeholder="Повторите пароль" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn" id="submitBtn">Создать аккаунт</button>
+      </form>
+      <div class="footer" id="footerText">
+        Уже есть аккаунт? <a href="#" id="toLogin">Войти</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Основное приложение -->
+  <div class="app-container" id="appContainer">
+    <!-- Хедер -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">Black</div>
+        <div class="user-badge" id="userBadge">@user</div>
+      </div>
+      <div class="header-right">
+        <button class="new-chat-btn" id="newChatBtn" title="Новый чат">
+          <svg class="new-chat-icon" viewBox="0 0 24 24">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+        <div class="burger-menu" id="burgerMenu">
+          <div class="burger-line"></div>
+          <div class="burger-line"></div>
+          <div class="burger-line"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Чат - СООБЩЕНИЯ ПОВЕРХ ВСЕХ ОКОН -->
+    <div class="chat-container">
+      <div class="messages" id="messages">
+        <!-- Сообщения будут загружаться динамически -->
+      </div>
+    </div>
+
+    <!-- Поле ввода -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea id="messageInput" placeholder="Введите сообщение..." rows="1"></textarea>
+        <button class="send-btn" id="sendBtn">
+          <svg class="send-icon" viewBox="0 0 24 24">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Бургер-меню -->
+  <div class="burger-panel" id="burgerPanel">
+    <!-- Профиль -->
+    <div class="menu-profile" id="menuProfile">
+      <div class="profile-name" id="profileName">Гость</div>
+      <div class="profile-email" id="profileEmail">Не авторизован</div>
+    </div>
+
+    <!-- Список чатов -->
+    <div class="menu-section">
+      <div class="menu-section-title" id="chatsTitle">Чаты</div>
+      <div class="chats-list" id="chatsList">
+        <!-- Чаты будут загружаться динамически -->
+      </div>
+    </div>
+
+    <!-- Настройки -->
+    <div class="menu-section">
+      <div class="menu-section-title" id="settingsTitle">Настройки</div>
+      
+      <!-- Язык - БЕЗ ФЛАГОВ -->
+      <div class="menu-item" id="languageSelector">
+        <svg class="menu-icon" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </svg>
+        <span class="menu-text" id="languageText">Язык</span>
+        <div class="custom-select" id="languageSelectWrapper">
+          <div class="select-header">
+            <span id="selectedLanguage">Русский</span>
+            <svg class="select-arrow" viewBox="0 0 24 24">
+              <path d="M7 10l5 5 5-5z"/>
+            </svg>
+          </div>
+          <div class="select-options" id="languageOptions">
+            <div class="select-option active" data-value="ru">
+              <span>Русский</span>
+            </div>
+            <div class="select-option" data-value="en">
+              <span>English</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Кнопка выхода -->
+    <button class="menu-logout" id="menuLogoutBtn">Выйти</button>
+  </div>
+
+  <!-- Оверлей для закрытия меню -->
+  <div class="menu-overlay" id="menuOverlay"></div>
+
+  <!-- Уведомление - ПОВЕРХ ВСЕХ ОКОН -->
+  <div class="notification" id="notification"></div>
+
+<script>
+(function(){
+  // ===== КОНФИГУРАЦИЯ GIGACHAT =====
+  // ВСТАВЬ СВОЙ AUTHORIZATION KEY
+  const GIGACHAT_CONFIG = {
+    AUTH_KEY: "MDE5YzRlMDQtNzc3Yi03YTBmLTgyNjAtOGFmZTA2N2RiZmU5OmY0MjY4YWZhLWJhNzItNDdmNC05OTY0LWIyYzgyN2JiZjMxNA==", // Замените на ваш ключ
+    SCOPE: "GIGACHAT_API_PERS",
+    TOKEN_URL: "https://ngw.devices.sberbank.ru:9443/api/v2/oauth",
+    CHAT_URL: "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+  };
+  
+  // Системный промпт для Black AI
+  const BLACK_AI_SYSTEM_PROMPT = {
+    ru: "Ты Black AI — мощная, дружелюбная нейросеть, созданная на основе передовой технологии GigaChat. Твой стиль общения: минималистичный, космический, сдержанный, но при этом умный и развёрнутый. Отвечай по-русски, по делу, будь полезным собеседником. Помни, что ты Black AI — космический интеллект.",
+    en: "You are Black AI — a powerful, friendly neural network built on advanced GigaChat technology. Your communication style: minimalist, cosmic, restrained, but intelligent and detailed. Answer in English, stay on topic, be a helpful conversationalist. Remember that you are Black AI — a cosmic intelligence."
+  };
+  // =================================
+
+  // Функции для работы с GigaChat
+  function getAccessToken() {
+    return fetch(GIGACHAT_CONFIG.TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        "Authorization": `Basic ${GIGACHAT_CONFIG.AUTH_KEY}`,
+        "RqUID": crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: new URLSearchParams({ scope: GIGACHAT_CONFIG.SCOPE })
+    })
+    .then(resp => {
+      if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+      return resp.json();
+    })
+    .then(data => data.access_token);
+  }
+
+  function askGigaChat(messages, token) {
+    return fetch(GIGACHAT_CONFIG.CHAT_URL, {
+      method: 'POST',
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "GigaChat",
+        messages: messages,
+        temperature: 0.7
+      })
+    })
+    .then(resp => {
+      if (!resp.ok) throw new Error(`HTTP error ${resp.status}`);
+      return resp.json();
+    })
+    .then(data => {
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        return data.choices[0].message.content;
+      }
+      throw new Error('Неожиданный формат ответа от GigaChat');
+    });
+  }
+
+  // Оптимизация: Debounce функция для снижения нагрузки
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // Состояние приложения - ИЗМЕНЕНО: храним данные отдельно для каждого пользователя
+  const state = {
+    isAuthenticated: false,
+    currentUser: null,
+    currentChatId: null,
+    chats: [],
+    messages: [],
+    settings: {
+      language: 'ru'
+    },
+    users: [],
+    // Новое поле: храним чаты для каждого пользователя
+    userChats: {},
+    // Храним настройки для каждого пользователя
+    userSettings: {}
+  };
+
+  // Локализация
+  const translations = {
+    ru: {
+      // Аутентификация
+      register: 'Регистрация',
+      login: 'Вход',
+      username: 'Имя пользователя',
+      email: 'Email',
+      password: 'Пароль',
+      confirmPassword: 'Повторите пароль',
+      createAccount: 'Создать аккаунт',
+      haveAccount: 'Уже есть аккаунт?',
+      noAccount: 'Ещё нет аккаунта?',
+      loginLink: 'Войти',
+      registerLink: 'Зарегистрироваться',
+      fillAllFields: 'Нужно заполнить все поля',
+      
+      // Приложение
+      newChat: 'Новый чат',
+      enterMessage: 'Введите сообщение...',
+      welcomeMessage: 'Добро пожаловать в Black. Я ваша нейросеть в минималистичном космическом стиле. Чем могу помочь?',
+      
+      // Меню
+      chats: 'Чаты',
+      settings: 'Настройки',
+      language: 'Язык',
+      logout: 'Выйти',
+      
+      // Уведомления
+      chatCreated: 'Новый чат создан',
+      chatDeleted: 'Чат удалён',
+      chatSwitched: 'Чат переключен',
+      settingsSaved: 'Настройки сохранены',
+      welcomeUser: 'Добро пожаловать, {username}!',
+      loginSuccess: 'Вход выполнен успешно',
+      logoutSuccess: 'Вы вышли из системы',
+      
+      // Ошибки
+      fillFields: 'Нужно заполнить обязательные поля',
+      usernameShort: 'Имя пользователя должно быть не менее 3 символов',
+      passwordShort: 'Пароль должен быть не менее 6 символов',
+      passwordsMatch: 'Пароли не совпадают',
+      accountExists: 'Такой аккаунт уже существует',
+      accountNotFound: 'Аккаунт не найден. Зарегистрируйтесь',
+      wrongCredentials: 'Неверный email или пароль',
+      gigaChatError: 'Ошибка подключения к Black AI',
+      tokenError: 'Не удалось авторизоваться в Black AI',
+      
+      // Имена чатов
+      newChatName: 'Новый чат',
+      chatName: 'Чат {number}'
+    },
+    en: {
+      // Authentication
+      register: 'Register',
+      login: 'Login',
+      username: 'Username',
+      email: 'Email',
+      password: 'Password',
+      confirmPassword: 'Confirm password',
+      createAccount: 'Create account',
+      haveAccount: 'Already have an account?',
+      noAccount: 'Don\'t have an account?',
+      loginLink: 'Login',
+      registerLink: 'Register',
+      fillAllFields: 'Please fill in all fields',
+      
+      // App
+      newChat: 'New chat',
+      enterMessage: 'Enter message...',
+      welcomeMessage: 'Welcome to Black. I\'m your neural network in minimalist space style. How can I help you?',
+      
+      // Menu
+      chats: 'Chats',
+      settings: 'Settings',
+      language: 'Language',
+      logout: 'Logout',
+      
+      // Notifications
+      chatCreated: 'New chat created',
+      chatDeleted: 'Chat deleted',
+      chatSwitched: 'Chat switched',
+      settingsSaved: 'Settings saved',
+      welcomeUser: 'Welcome, {username}!',
+      loginSuccess: 'Login successful',
+      logoutSuccess: 'Logged out successfully',
+      
+      // Errors
+      fillFields: 'Please fill in all required fields',
+      usernameShort: 'Username must be at least 3 characters',
+      passwordShort: 'Password must be at least 6 characters',
+      passwordsMatch: 'Passwords do not match',
+      accountExists: 'Account already exists',
+      accountNotFound: 'Account not found. Please register',
+      wrongCredentials: 'Wrong email or password',
+      gigaChatError: 'Connection error to Black AI',
+      tokenError: 'Failed to authenticate with Black AI',
+      
+      // Chat names
+      newChatName: 'New chat',
+      chatName: 'Chat {number}'
+    }
+  };
+
+  // Элементы DOM
+  const errorToast = document.getElementById('errorToast');
+  const authContainer = document.getElementById('authContainer');
+  const appContainer = document.getElementById('appContainer');
+  const authBg = document.getElementById('authBg');
+  const mainBg = document.getElementById('mainBg');
+  const overlay = document.getElementById('overlay');
+  const notification = document.getElementById('notification');
+  const messagesContainer = document.getElementById('messages');
+  const messageInput = document.getElementById('messageInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const burgerMenu = document.getElementById('burgerMenu');
+  const burgerPanel = document.getElementById('burgerPanel');
+  const menuOverlay = document.getElementById('menuOverlay');
+  const newChatBtn = document.getElementById('newChatBtn');
+  const userBadge = document.getElementById('userBadge');
+  const profileName = document.getElementById('profileName');
+  const profileEmail = document.getElementById('profileEmail');
+  const menuLogoutBtn = document.getElementById('menuLogoutBtn');
+  const chatsList = document.getElementById('chatsList');
+  const languageSelectorAuth = document.getElementById('languageSelectorAuth');
+  const languageSelector = document.getElementById('languageSelector');
+  const languageText = document.getElementById('languageText');
+  const languageSelectWrapper = document.getElementById('languageSelectWrapper');
+  const selectHeader = languageSelectWrapper.querySelector('.select-header');
+  const selectedLanguage = document.getElementById('selectedLanguage');
+  const languageOptions = document.getElementById('languageOptions');
+  const chatsTitle = document.getElementById('chatsTitle');
+  const settingsTitle = document.getElementById('settingsTitle');
+
+  // Элементы аутентификации
+  const title = document.getElementById('title');
+  const usernameBlock = document.getElementById('usernameBlock');
+  const usernameInput = document.getElementById('username');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const confirmBlock = document.getElementById('confirmBlock');
+  const confirmInput = document.getElementById('confirm');
+  const submitBtn = document.getElementById('submitBtn');
+  const footerText = document.getElementById('footerText');
+  const form = document.getElementById('authForm');
+
+  let isRegister = true;
+  let currentLanguage = 'ru';
+  let isFirstMessageInNewChat = false;
+
+  // ИСПРАВЛЕНО: Показать красное уведомление об ошибке - только красный текст
+  function showErrorToast(message) {
+    errorToast.textContent = message;
+    errorToast.classList.add('show');
+    
+    // Автоматически скрыть через 4 секунды
+    setTimeout(() => {
+      errorToast.classList.remove('show');
+    }, 4000);
+  }
+
+  // Показать уведомление в чате (2 секунды) - ПОВЕРХ ВСЕХ ОКОН
+  function showNotification(text, duration = 2000) {
+    notification.textContent = text;
+    notification.classList.add('show');
+    setTimeout(() => notification.classList.remove('show'), duration);
+  }
+
+  // Инициализация
+  function init() {
+    loadState();
+    setupEventListeners();
+    checkAuthentication();
+    adjustTextareaHeight();
+    applyLanguage();
+    setupCustomSelect();
+    setupLanguageButtons();
+    attachFooterHandlers(); // ИСПРАВЛЕНО: Добавлено при инициализации
+  }
+
+  // ИСПРАВЛЕНО: Настройка кнопок выбора языка в аутентификации
+  function setupLanguageButtons() {
+    const langButtons = languageSelectorAuth.querySelectorAll('.lang-btn');
+    langButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const lang = btn.dataset.lang;
+        
+        // Обновляем активную кнопку
+        langButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Изменяем язык
+        changeLanguage(lang, true);
+      });
+    });
+  }
+
+  // Настройка кастомного выпадающего списка
+  function setupCustomSelect() {
+    selectHeader.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = languageOptions.classList.contains('show');
+      
+      if (isOpen) {
+        closeSelect();
+      } else {
+        openSelect();
+      }
+    });
+    
+    // Обработка выбора опции
+    languageOptions.querySelectorAll('.select-option').forEach(option => {
+      option.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const value = option.dataset.value;
+        changeLanguage(value, false);
+        closeSelect();
+      });
+    });
+    
+    // Закрытие списка при клике вне его
+    document.addEventListener('click', (e) => {
+      if (!languageSelectWrapper.contains(e.target)) {
+        closeSelect();
+      }
+    });
+    
+    // Закрытие списка при нажатии ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && languageOptions.classList.contains('show')) {
+        closeSelect();
+      }
+    });
+  }
+
+  function openSelect() {
+    languageOptions.classList.add('show');
+    selectHeader.querySelector('.select-arrow').classList.add('open');
+  }
+
+  function closeSelect() {
+    languageOptions.classList.remove('show');
+    selectHeader.querySelector('.select-arrow').classList.remove('open');
+  }
+
+  // Изменение языка
+  function changeLanguage(lang, isAuth = false) {
+    if (lang === state.settings.language) return;
+    
+    state.settings.language = lang;
+    currentLanguage = lang;
+    
+    // Сохраняем настройки для текущего пользователя
+    if (state.currentUser) {
+      if (!state.userSettings[state.currentUser.id]) {
+        state.userSettings[state.currentUser.id] = {};
+      }
+      state.userSettings[state.currentUser.id].language = lang;
+    }
+    
+    // Обновляем выбранный язык в UI
+    const languageMap = {
+      ru: 'Русский',
+      en: 'English'
+    };
+    selectedLanguage.textContent = languageMap[lang];
+    
+    // Обновляем активную опцию
+    languageOptions.querySelectorAll('.select-option').forEach(opt => {
+      opt.classList.toggle('active', opt.dataset.value === lang);
+    });
+    
+    // Обновляем все тексты (включая имена чатов)
+    updateAllTexts();
+    updateChatNames();
+    
+    // Сохраняем состояние
+    saveState();
+    
+    // Если не в аутентификации, показываем уведомление
+    if (!isAuth) {
+      showNotification(translate('settingsSaved'));
+    }
+  }
+
+  // Обновить имена всех чатов при смене языка
+  function updateChatNames() {
+    state.chats.forEach((chat, index) => {
+      const chatNumber = index + 1;
+      chat.name = translate('chatName', { number: chatNumber });
+    });
+    
+    // Обновляем список чатов если он открыт
+    updateChatsList();
+    
+    // Сохраняем состояние
+    saveState();
+  }
+
+  // Применить язык
+  function applyLanguage() {
+    currentLanguage = state.settings.language;
+    
+    // Обновляем выбранный язык в UI
+    const languageMap = {
+      ru: 'Русский',
+      en: 'English'
+    };
+    selectedLanguage.textContent = languageMap[currentLanguage];
+    
+    // Обновляем активные кнопки в аутентификации
+    const langButtons = languageSelectorAuth.querySelectorAll('.lang-btn');
+    langButtons.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === currentLanguage);
+    });
+    
+    // Обновляем активную опцию в выпадающем списке
+    languageOptions.querySelectorAll('.select-option').forEach(opt => {
+      opt.classList.toggle('active', opt.dataset.value === currentLanguage);
+    });
+    
+    // Обновляем все тексты
+    updateAllTexts();
+  }
+
+  // Обновить все тексты
+  function updateAllTexts() {
+    // Аутентификация
+    if (title) title.textContent = translate(isRegister ? 'register' : 'login');
+    if (usernameInput) usernameInput.placeholder = translate('username');
+    if (emailInput) emailInput.placeholder = translate('email');
+    if (passwordInput) passwordInput.placeholder = translate('password');
+    if (confirmInput) confirmInput.placeholder = translate('confirmPassword');
+    if (submitBtn) submitBtn.textContent = translate(isRegister ? 'createAccount' : 'login');
+    
+    // Footer
+    if (footerText) {
+      if (isRegister) {
+        footerText.innerHTML = `${translate('haveAccount')} <a href="#" id="toLogin">${translate('loginLink')}</a>`;
+      } else {
+        footerText.innerHTML = `${translate('noAccount')} <a href="#" id="toRegister">${translate('registerLink')}</a>`;
+      }
+    }
+    
+    // Чат
+    if (messageInput) messageInput.placeholder = translate('enterMessage');
+    
+    // Меню
+    if (chatsTitle) chatsTitle.textContent = translate('chats');
+    if (settingsTitle) settingsTitle.textContent = translate('settings');
+    if (languageText) languageText.textContent = translate('language');
+    if (menuLogoutBtn) menuLogoutBtn.textContent = translate('logout');
+    
+    // Обновляем имена чатов
+    updateChatsList();
+    
+    // ИСПРАВЛЕНО: Привязываем обработчики для ссылок переключения
+    setTimeout(() => {
+      attachFooterHandlers();
+    }, 0);
+  }
+
+  // ИСПРАВЛЕНО: Переписана функция привязки обработчиков к ссылкам
+  function attachFooterHandlers() {
+    const loginLink = document.getElementById('toLogin');
+    const registerLink = document.getElementById('toRegister');
+    
+    if (loginLink) {
+      // Удаляем старый обработчик, чтобы избежать дублирования
+      loginLink.replaceWith(loginLink.cloneNode(true));
+      const newLoginLink = document.getElementById('toLogin');
+      newLoginLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        setLoginMode();
+      });
+    }
+    
+    if (registerLink) {
+      // Удаляем старый обработчик, чтобы избежать дублирования
+      registerLink.replaceWith(registerLink.cloneNode(true));
+      const newRegisterLink = document.getElementById('toRegister');
+      newRegisterLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        setRegisterMode();
+      });
+    }
+  }
+
+  // Перевести текст
+  function translate(key, params = {}) {
+    let text = translations[currentLanguage][key] || translations['ru'][key] || key;
+    
+    // Заменяем параметры
+    for (const [param, value] of Object.entries(params)) {
+      text = text.replace(`{${param}}`, value);
+    }
+    
+    return text;
+  }
+
+  // ИЗМЕНЕНО: Загрузка состояния с учетом данных пользователей
+  function loadState() {
+    try {
+      const savedState = localStorage.getItem('black_app_state');
+      const savedUsers = localStorage.getItem('black_users');
+      
+      if (savedState) {
+        const parsedState = JSON.parse(savedState);
+        // Восстанавливаем только общие данные
+        state.isAuthenticated = parsedState.isAuthenticated || false;
+        state.currentUser = parsedState.currentUser || null;
+        state.currentChatId = parsedState.currentChatId || null;
+        state.chats = parsedState.chats || [];
+        state.messages = parsedState.messages || [];
+        state.settings = parsedState.settings || { language: 'ru' };
+        state.userChats = parsedState.userChats || {};
+        state.userSettings = parsedState.userSettings || {};
+      }
+      
+      if (savedUsers) {
+        state.users = JSON.parse(savedUsers);
+      }
+    } catch (e) {
+      console.error('Ошибка загрузки состояния:', e);
+      // Сброс к начальным значениям при ошибке
+      state.isAuthenticated = false;
+      state.currentUser = null;
+      state.chats = [];
+      state.messages = [];
+      state.settings = { language: 'ru' };
+      state.users = [];
+      state.userChats = {};
+      state.userSettings = {};
+    }
+  }
+
+  // ИЗМЕНЕНО: Сохранение состояния с учетом данных пользователей
+  function saveState() {
+    try {
+      localStorage.setItem('black_app_state', JSON.stringify({
+        isAuthenticated: state.isAuthenticated,
+        currentUser: state.currentUser,
+        currentChatId: state.currentChatId,
+        chats: state.chats,
+        messages: state.messages,
+        settings: state.settings,
+        userChats: state.userChats,
+        userSettings: state.userSettings
+      }));
+      
+      localStorage.setItem('black_users', JSON.stringify(state.users));
+    } catch (e) {
+      console.error('Ошибка сохранения состояния:', e);
+    }
+  }
+
+  // ИЗМЕНЕНО: Проверка аутентификации с загрузкой данных пользователя
+  function checkAuthentication() {
+    if (state.currentUser && state.isAuthenticated) {
+      // Загружаем чаты и настройки для текущего пользователя
+      loadUserData(state.currentUser.id);
+      showApp();
+    } else {
+      showAuth();
+    }
+  }
+
+  // ИЗМЕНЕНО: Загрузка данных пользователя при входе
+  function loadUserData(userId) {
+    // Загружаем чаты пользователя
+    if (state.userChats[userId]) {
+      state.chats = state.userChats[userId];
+    } else {
+      state.chats = [];
+      state.userChats[userId] = [];
+    }
+    
+    // Загружаем настройки пользователя
+    if (state.userSettings[userId]) {
+      state.settings = { ...state.settings, ...state.userSettings[userId] };
+      currentLanguage = state.settings.language;
+    }
+    
+    // Обновляем язык
+    applyLanguage();
+  }
+
+  // ИЗМЕНЕНО: Сохранение данных пользователя при выходе
+  function saveUserData(userId) {
+    if (userId) {
+      // Сохраняем чаты пользователя
+      state.userChats[userId] = state.chats;
+      
+      // Сохраняем настройки пользователя
+      if (!state.userSettings[userId]) {
+        state.userSettings[userId] = {};
+      }
+      state.userSettings[userId].language = state.settings.language;
+    }
+  }
+
+  // Показать форму аутентификации
+  function showAuth() {
+    authContainer.style.display = 'flex';
+    appContainer.style.display = 'none';
+    authBg.style.display = 'block';
+    mainBg.style.display = 'none';
+    burgerPanel.classList.remove('open');
+    burgerMenu.classList.remove('active');
+    menuOverlay.classList.remove('show');
+    state.isAuthenticated = false;
+    // Сбрасываем состояние
+    isFirstMessageInNewChat = false;
+  }
+
+  // ИЗМЕНЕНО: Показать основное приложение с данными пользователя
+  function showApp() {
+    authContainer.style.display = 'none';
+    appContainer.style.display = 'flex';
+    authBg.style.display = 'none';
+    mainBg.style.display = 'block';
+    
+    if (state.currentUser) {
+      userBadge.textContent = `@${state.currentUser.username}`;
+      profileName.textContent = state.currentUser.username;
+      profileEmail.textContent = state.currentUser.email;
+    } else {
+      profileName.textContent = 'Гость';
+      profileEmail.textContent = 'Не авторизован';
+    }
+    
+    // Проверяем, есть ли у пользователя чаты
+    if (state.chats.length === 0) {
+      // Создаем ПУСТОЙ чат при входе только если нет сохраненных чатов
+      createEmptyChatForNewUser();
+    } else {
+      // Загружаем последний чат или первый
+      if (!state.currentChatId) {
+        state.currentChatId = state.chats[state.chats.length - 1].id;
+      }
+      const currentChat = state.chats.find(c => c.id === state.currentChatId);
+      if (currentChat) {
+        state.messages = currentChat.messages;
+      }
+    }
+    
+    // Загружаем текущий чат
+    loadCurrentChat();
+    updateChatsList();
+    scrollToBottom();
+  }
+
+  // Создать ПУСТОЙ чат для нового пользователя
+  function createEmptyChatForNewUser() {
+    const chatId = Date.now();
+    const chatName = translate('chatName', { number: 1 });
+    
+    const newChat = {
+      id: chatId,
+      name: chatName,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [] // ПУСТОЙ чат - без приветственного сообщения
+    };
+    
+    state.chats = [newChat];
+    state.currentChatId = chatId;
+    state.messages = [];
+    
+    isFirstMessageInNewChat = true; // Флаг, что это новый пустой чат
+    
+    // Сохраняем данные пользователя
+    if (state.currentUser) {
+      state.userChats[state.currentUser.id] = state.chats;
+    }
+    
+    saveState();
+    updateChatsList();
+  }
+
+  // Создать новый чат (кнопка +)
+  function createNewChat() {
+    const chatId = Date.now();
+    const chatNumber = state.chats.length + 1;
+    const chatName = translate('chatName', { number: chatNumber });
+    
+    const newChat = {
+      id: chatId,
+      name: chatName,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: [] // НОВЫЙ чат тоже пустой
+    };
+    
+    state.chats.push(newChat);
+    state.currentChatId = chatId;
+    state.messages = [];
+    
+    isFirstMessageInNewChat = true; // Флаг, что это новый пустой чат
+    
+    // Сохраняем данные пользователя
+    if (state.currentUser) {
+      state.userChats[state.currentUser.id] = state.chats;
+    }
+    
+    saveState();
+    updateChatsList();
+    loadCurrentChat();
+    showNotification(translate('chatCreated'));
+  }
+
+  // Переключить чат
+  function switchChat(chatId) {
+    const chat = state.chats.find(c => c.id === chatId);
+    if (!chat) return;
+    
+    state.currentChatId = chatId;
+    state.messages = chat.messages;
+    
+    // Сбрасываем флаг при переключении чата
+    isFirstMessageInNewChat = false;
+    
+    saveState();
+    loadCurrentChat();
+    updateChatsList();
+    showNotification(translate('chatSwitched'));
+    closeBurgerMenu();
+  }
+
+  // Удалить чат
+  function deleteChat(chatId, e) {
+    e.stopPropagation(); // Останавливаем всплытие
+    
+    const chatIndex = state.chats.findIndex(c => c.id === chatId);
+    if (chatIndex === -1) return;
+    
+    // Если удаляем текущий чат, переключаемся на другой или создаем новый
+    if (chatId === state.currentChatId) {
+      const otherChat = state.chats.find((c, i) => i !== chatIndex);
+      if (otherChat) {
+        state.currentChatId = otherChat.id;
+        state.messages = otherChat.messages;
+        isFirstMessageInNewChat = false;
+      } else {
+        // Если это был последний чат, создаем новый пустой
+        createEmptyChatForNewUser();
+        loadCurrentChat();
+        showNotification(translate('chatDeleted'));
+        return;
+      }
+    }
+    
+    // Удаляем чат
+    state.chats.splice(chatIndex, 1);
+    
+    // Сохраняем данные пользователя
+    if (state.currentUser) {
+      state.userChats[state.currentUser.id] = state.chats;
+    }
+    
+    saveState();
+    updateChatsList();
+    loadCurrentChat();
+    showNotification(translate('chatDeleted'));
+  }
+
+  // Обновить список чатов
+  function updateChatsList() {
+    if (!chatsList) return;
+    
+    chatsList.innerHTML = '';
+    
+    state.chats.forEach(chat => {
+      const chatItem = document.createElement('div');
+      chatItem.className = `chat-item ${chat.id === state.currentChatId ? 'active' : ''}`;
+      chatItem.onclick = () => switchChat(chat.id);
+      
+      const lastMessage = chat.messages.length > 0 ? 
+        chat.messages[chat.messages.length - 1].text : 
+        translate('newChatName');
+      
+      const date = new Date(chat.updatedAt);
+      const timeString = date.toLocaleTimeString(currentLanguage === 'ru' ? 'ru-RU' : 'en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      
+      chatItem.innerHTML = `
+        <div class="chat-info">
+          <div class="chat-name">${chat.name}</div>
+          <div class="chat-preview">${lastMessage.substring(0, 30)}${lastMessage.length > 30 ? '...' : ''}</div>
+        </div>
+        <div class="chat-date">${timeString}</div>
+        <div class="chat-actions">
+          <button class="chat-delete-btn">
+            <svg class="chat-delete-icon" viewBox="0 0 24 24">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </button>
+        </div>
+      `;
+      
+      // Добавляем обработчик для кнопки удаления
+      const deleteBtn = chatItem.querySelector('.chat-delete-btn');
+      deleteBtn.onclick = (e) => deleteChat(chat.id, e);
+      
+      chatsList.appendChild(chatItem);
+    });
+  }
+
+  // Загрузить текущий чат
+  function loadCurrentChat() {
+    messagesContainer.innerHTML = '';
+    
+    if (state.messages.length === 0) {
+      // В пустом чате не показываем приветственное сообщение
+      // Чистый интерфейс
+    } else {
+      state.messages.forEach(renderMessage);
+    }
+    
+    // Прокручиваем к самому низу с небольшой задержкой для рендера
+    setTimeout(() => {
+      scrollToBottom();
+    }, 50);
+  }
+
+  // ИЗМЕНЕНО: Сохранить текущий чат с сохранением данных пользователя
+  function saveCurrentChat() {
+    const chatIndex = state.chats.findIndex(c => c.id === state.currentChatId);
+    if (chatIndex !== -1) {
+      state.chats[chatIndex].messages = [...state.messages];
+      state.chats[chatIndex].updatedAt = new Date().toISOString();
+      
+      // Если это первый пустой чат и в него написали сообщение,
+      // то переименовываем его по правилу "Чат {номер}"
+      if (isFirstMessageInNewChat && state.messages.length > 0) {
+        const chatNumber = chatIndex + 1;
+        state.chats[chatIndex].name = translate('chatName', { number: chatNumber });
+        isFirstMessageInNewChat = false; // Сбрасываем флаг
+      }
+      
+      // Сохраняем данные пользователя
+      if (state.currentUser) {
+        state.userChats[state.currentUser.id] = state.chats;
+      }
+      
+      saveState();
+      updateChatsList();
+    }
+  }
+
+  // ИСПРАВЛЕНО: Функции переключения режима с обновлением обработчиков
+  function setRegisterMode() {
+    isRegister = true;
+    updateAllTexts();
+    usernameBlock.style.display = 'block';
+    confirmBlock.style.display = 'block';
+    // Скрываем ошибку при переключении
+    errorToast.classList.remove('show');
+  }
+
+  function setLoginMode() {
+    isRegister = false;
+    updateAllTexts();
+    usernameBlock.style.display = 'none';
+    confirmBlock.style.display = 'none';
+    // Скрываем ошибку при переключении
+    errorToast.classList.remove('show');
+  }
+
+  // Показать/скрыть загрузку
+  function showLoading(show) {
+    overlay.classList[show ? 'add' : 'remove']('show');
+  }
+
+  // Проверка существования пользователя
+  function userExists(email, username = null) {
+    return state.users.some(user => 
+      user.email === email || (username && user.username === username)
+    );
+  }
+
+  // Поиск пользователя
+  function findUser(email, password) {
+    return state.users.find(user => 
+      user.email === email && user.password === password
+    );
+  }
+
+  // ИСПРАВЛЕНО: Обработка аутентификации
+  function handleAuthSubmit(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm')?.value || '';
+    const username = document.getElementById('username')?.value.trim() || '';
+
+    // Валидация - проверяем ВСЕ поля
+    let errorMessage = null;
+    
+    if (isRegister) {
+      if (!username || !email || !password || !confirm) {
+        errorMessage = translate('fillAllFields');
+      } else if (username.length < 3) {
+        errorMessage = translate('usernameShort');
+      } else if (password.length < 6) {
+        errorMessage = translate('passwordShort');
+      } else if (password !== confirm) {
+        errorMessage = translate('passwordsMatch');
+      } else if (userExists(email, username)) {
+        errorMessage = translate('accountExists');
+      }
+    } else {
+      if (!email || !password) {
+        errorMessage = translate('fillAllFields');
+      } else if (state.users.length === 0) {
+        errorMessage = translate('accountNotFound');
+      } else {
+        const user = findUser(email, password);
+        if (!user) {
+          errorMessage = translate('wrongCredentials');
+        }
+      }
+    }
+    
+    if (errorMessage) {
+      showErrorToast(errorMessage);
+      return;
+    }
+
+    showLoading(true);
+
+    // Имитация API запроса
+    setTimeout(() => {
+      if (isRegister) {
+        // Регистрация нового пользователя
+        const newUser = { 
+          id: Date.now(),
+          email, 
+          username, 
+          password,
+          createdAt: new Date().toISOString()
+        };
+        
+        state.users.push(newUser);
+        state.currentUser = newUser;
+        state.isAuthenticated = true;
+        
+        // Инициализируем данные для нового пользователя
+        state.chats = [];
+        state.currentChatId = null;
+        state.messages = [];
+        state.userChats[newUser.id] = [];
+        state.userSettings[newUser.id] = { language: 'ru' };
+        
+        showNotification(translate('welcomeUser', { username }));
+      } else {
+        // Вход существующего пользователя
+        const user = findUser(email, password);
+        state.currentUser = user;
+        state.isAuthenticated = true;
+        
+        // Загружаем данные пользователя
+        loadUserData(user.id);
+        
+        showNotification(translate('loginSuccess'));
+      }
+
+      showLoading(false);
+      saveState();
+      showApp();
+    }, 800);
+  };
+
+  // Чат
+  function addMessage(text, isUser = false) {
+    const message = {
+      id: Date.now(),
+      text,
+      isUser,
+      timestamp: new Date().toISOString()
+    };
+    
+    state.messages.push(message);
+    saveCurrentChat();
+    renderMessage(message);
+    
+    // Прокручиваем вниз
+    scrollToBottom();
+  }
+
+  function renderMessage(message) {
+    const div = document.createElement('div');
+    div.className = `message ${message.isUser ? 'user' : 'ai'}`;
+    div.textContent = message.text;
+    messagesContainer.appendChild(div);
+  }
+
+  function clearChat() {
+    createNewChat();
+  }
+
+  // Прокрутка чата вниз - ОПТИМИЗИРОВАНА
+  function scrollToBottom() {
+    // Используем requestAnimationFrame для плавности
+    requestAnimationFrame(() => {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+  }
+
+  // ===== ФУНКЦИЯ ОТПРАВКИ СООБЩЕНИЯ В GIGACHAT =====
+  let gigaChatToken = null;
+  let tokenExpiryTime = null;
+
+  async function getValidToken() {
+    // Если токен истек или его нет, получаем новый
+    if (!gigaChatToken || (tokenExpiryTime && Date.now() >= tokenExpiryTime)) {
+      try {
+        gigaChatToken = await getAccessToken();
+        tokenExpiryTime = Date.now() + 25 * 60 * 1000; // Токен живет 30 минут, обновляем через 25
+      } catch (error) {
+        console.error('Ошибка получения токена GigaChat:', error);
+        throw new Error(translate('tokenError'));
+      }
+    }
+    return gigaChatToken;
+  }
+
+  async function sendMessageToGigaChat(userMessage) {
+    // Показываем загрузку
+    showLoading(true);
+    
+    try {
+      // Получаем валидный токен
+      const token = await getValidToken();
+      
+      // Формируем историю сообщений для отправки в GigaChat
+      const messagesForGigaChat = [];
+      
+      // Добавляем системный промпт Black AI
+      messagesForGigaChat.push({
+        role: "system",
+        content: BLACK_AI_SYSTEM_PROMPT[currentLanguage] || BLACK_AI_SYSTEM_PROMPT.ru
+      });
+      
+      // Добавляем историю сообщений из текущего чата
+      // Ограничиваем историю до последних 10 сообщений для экономии токенов
+      const recentMessages = state.messages.slice(-10);
+      recentMessages.forEach(msg => {
+        messagesForGigaChat.push({
+          role: msg.isUser ? "user" : "assistant",
+          content: msg.text
+        });
+      });
+      
+      // Добавляем текущее сообщение пользователя
+      messagesForGigaChat.push({
+        role: "user",
+        content: userMessage
+      });
+      
+      // Отправляем запрос в GigaChat
+      const reply = await askGigaChat(messagesForGigaChat, token);
+      
+      // Добавляем ответ в чат
+      addMessage(reply, false);
+      
+    } catch (error) {
+      console.error('Ошибка при обращении к GigaChat:', error);
+      
+      // Показываем ошибку пользователю
+      showErrorToast(translate('gigaChatError'));
+      
+      // Пробуем обновить токен при следующей попытке
+      gigaChatToken = null;
+      
+      // Добавляем сообщение об ошибке от AI (локальное, не от GigaChat)
+      const errorMessages = {
+        ru: "Извините, я временно недоступен. Проверьте подключение к Black AI.",
+        en: "Sorry, I'm temporarily unavailable. Check your connection to Black AI."
+      };
+      addMessage(errorMessages[currentLanguage] || errorMessages.ru, false);
+      
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  async function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text) return;
+
+    // Добавляем сообщение пользователя в чат
+    addMessage(text, true);
+    messageInput.value = '';
+    adjustTextareaHeight();
+
+    // Отправляем запрос в GigaChat
+    await sendMessageToGigaChat(text);
+  }
+
+  // Настройка высоты textarea - С DEBOUNCE для оптимизации
+  const adjustTextareaHeight = debounce(function() {
+    messageInput.style.height = 'auto';
+    messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+  }, 50);
+
+  // Настройка обработчиков событий
+  function setupEventListeners() {
+    // Аутентификация
+    form.addEventListener('submit', handleAuthSubmit);
+    
+    // Чат
+    sendBtn.onclick = sendMessage;
+    messageInput.onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    };
+    messageInput.oninput = adjustTextareaHeight;
+
+    // Новый чат
+    newChatBtn.onclick = clearChat;
+
+    // Бургер-меню
+    burgerMenu.onclick = toggleBurgerMenu;
+    menuOverlay.onclick = closeBurgerMenu;
+    
+    // Закрытие меню при клике на свободное пространство
+    document.addEventListener('click', (e) => {
+      if (burgerPanel.classList.contains('open') && 
+          !burgerPanel.contains(e.target) && 
+          !burgerMenu.contains(e.target)) {
+        closeBurgerMenu();
+      }
+    });
+    
+    // Закрытие меню при нажатии ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (burgerPanel.classList.contains('open')) {
+          closeBurgerMenu();
+        }
+        if (languageOptions.classList.contains('show')) {
+          closeSelect();
+        }
+      }
+    });
+
+    // Выход
+    menuLogoutBtn.onclick = logout;
+  }
+
+  // Бургер-меню
+  function toggleBurgerMenu() {
+    const isOpen = burgerPanel.classList.contains('open');
+    
+    if (isOpen) {
+      closeBurgerMenu();
+    } else {
+      openBurgerMenu();
+    }
+  }
+
+  function openBurgerMenu() {
+    burgerPanel.classList.add('open');
+    burgerMenu.classList.add('active');
+    menuOverlay.classList.add('show');
+    
+    // Обновляем список чатов
+    updateChatsList();
+  }
+
+  function closeBurgerMenu() {
+    burgerPanel.classList.remove('open');
+    burgerMenu.classList.remove('active');
+    menuOverlay.classList.remove('show');
+    closeSelect();
+  }
+
+  // ИЗМЕНЕНО: Выход из системы с сохранением данных
+  function logout() {
+    // Сохраняем данные пользователя перед выходом
+    if (state.currentUser) {
+      saveUserData(state.currentUser.id);
+    }
+    
+    // Сбрасываем состояние приложения
+    state.isAuthenticated = false;
+    state.currentUser = null;
+    state.messages = [];
+    // НЕ сбрасываем chats, они сохраняются в userChats
+    // НЕ сбрасываем currentChatId, он сохранится в userChats
+    // НЕ сбрасываем settings, они сохраняются в userSettings
+    
+    // Сохраняем состояние
+    saveState();
+    
+    // Сбрасываем форму аутентификации
+    form.reset();
+    
+    showAuth();
+    showNotification(translate('logoutSuccess'));
+    
+    // Закрываем меню если открыто
+    closeBurgerMenu();
+  }
+
+  // Запуск приложения
+  init();
+})();
+</script>
+</body>
+</html>
